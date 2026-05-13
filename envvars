@@ -1,3 +1,4 @@
 export TOMBSTONE_DB=/opt/tombstone/db
 export TOMBSTONE_HTML=/opt/tombstone/html
 export TOMBSTONE_IMPORT=/opt/tombstone/import
+export TOMBSTONE_DEV_LIMIT=50

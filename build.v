@@ -2,115 +2,77 @@ module main
 
 import os
 import json
-import lib.site
+import lib.person
 
 fn main() {
-	println('Loading data...')
-	data := site.load_site_data('data') or {
-		eprintln('Error loading data: ${err}')
-		return
+	dir_db := os.getenv('TOMBSTONE_DB')
+	dir_html := os.getenv('TOMBSTONE_HTML')
+	dir_import := os.getenv('TOMBSTONE_IMPORT')
+
+	if dir_db.len == 0 || dir_html.len == 0 || dir_import.len == 0 {
+		eprintln('Error: TOMBSTONE_xx environment variables are not set.')
+		eprintln('Please run: source envvars')
+		exit(1) // Stop safely before paths explode
 	}
 
-	// Setup output directory
-	os.mkdir_all('dist/person') or { panic(err) }
-	os.cp_all('static', 'dist', true)!
+	// Setup output directory structure
+	os.mkdir_all(os.join_path_single(dir_html, 'person')) or { panic(err) }
+	os.cp_all('static', dir_html, true)!
 
-	// Limit to the first 10 for testing
-	// Using .len check to avoid 'out of bounds' if dataset is smaller than 10
-	limit := if data.summaries.len < 10 { data.summaries.len } else { 10 }
-	test_batch := data.summaries[0..limit]
+	// 1. Walk through the sharded storage folder structure
+	os.walk(dir_db, fn [dir_html] (path string) {
+		// Skip directories or non-JSON files
+		if !path.ends_with('.json') || os.is_dir(path) {
+			return
+		}
 
-	println('Generating ${limit} test pages...')
+		// 2. Read and parse the absolute truth: The full Person record
+		json_data := os.read_file(path) or { return }
+		mut p := json.decode(person.Person, json_data) or { return }
 
-	for s in test_batch {
-		// 1. Unwrap the Option types for the HTML template
-		birth_date := s.birth or { '' }
-		death_date := s.death or { '' }
-		translation_json := json.encode(s.translations)
-		native_name := s.name_native
-		direction := if s.locale == 'ar' || s.locale == 'he' { 'rtl' } else { 'ltr' }
-		meta_desc := 'Digital memorial for ${s.name_native} . ' +
-			'Born: ${birth_date}. Martyred: ${death_date}.'
-		mut keywords := s.tags.join(', ')
+		// 3. Generate the 100% correct deterministic slug using the full struct
+		slug_url := p.slugify()
+
+		// 4. Map variables for your external templates/person.html file
+		locale := p.locale
+		native_name := p.name.native
+		direction := if p.locale == 'ar' || p.locale == 'he' { 'rtl' } else { 'ltr' }
+		person_id := p.id
+
+		// Call global formatting function passing the Option types
+		b_str := person.format_event_date(p.birth)
+		d_str := person.format_event_date(p.death)
+
+		// Map to template layout string tokens with fallback formatting
+		birth_date := if b_str != '' { b_str } else { '—' }
+		death_date := if d_str != '' { d_str } else { '—' }
+
+		// Extract values safely by borrowing the map reference in an if-let block
+		mut display_name := 'Unknown'
+		mut translation_json := '{}'
+		if t := p.name.translations {
+			display_name = t['en'] or { 'Unknown' }
+			translation_json = json.encode(t)
+		}
+
+		if display_name == '' {
+			display_name = p.name.native
+		}
+
+		keywords_txt := p.tags.join(', ')
+		meta_desc := 'Digital memorial for ${native_name} (${display_name}). Born: ${birth_date}. Martyred: ${death_date}.'
 
 		mut tags_html := ''
-		for tag in s.tags {
+		for tag in p.tags {
 			tags_html += '<span class="tag">#${tag}</span> '
 		}
 
-		html := '<!DOCTYPE html>
-<html lang="${s.locale}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${s.name_native}</title>
-    <meta name="description" content="${meta_desc}">
-    <meta name="keywords" content="${keywords}">
-    <link rel="stylesheet" href="../css/style.css">
-    <script src="../js/lang-switcher.js" defer></script>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
-</head>
-<body>
-    <nav class="lang-nav">
-        <button onclick="location.hash=\'en\'">English</button>
-        <button onclick="location.hash=\'ar\'">العربية</button>
-    </nav>
+		// 5. Compile the template (Fixed: added os. prefix)
+		html_output := $tmpl('templates/person.html')
 
-    <main class="memorial-container">
-        <article class="memorial-card">
-            <header class="memorial-header">
-                <!-- Original name: The anchor of the page -->
-                <h1 class="native-name" dir="${direction}">${native_name}</h1>
-                
-                <!-- Subtitle: Updated by JS from the translations map -->
-                <h2 id="name-translation" class="translation-subtitle" data-translations=\'${translation_json}\'></h2>
-            </header>
-
-            <section class="memorial-content">
-                <div class="life-dates">
-                    <p>
-                        <span data-translations=\'{"en": "Born", "ar": "ولد"}\'>Born</span>: 
-                        ${birth_date}
-                    </p>
-                    <p>
-                        <span data-translations=\'{"en": "Martyred", "ar": "استشهد"}\'>Martyred</span>: 
-                        ${death_date}
-                    </p>
-                </div>
-                
-                <div class="tags">
-                    ${tags_html}
-                </div>
-            </section>
-
-            <footer class="memorial-footer">
-                <hr>
-                <a href="/index.html" data-translations=\'{"en": "← Back to Index", "ar": "← العودة إلى الفهرس"}\'>← Back to Index</a>
-                <p class="id-badge">ID: ${s.id}</p>
-            </footer>
-        </article>
-    </main>
-</body>
-</html>'
-
-		out_path := os.join_path('dist/person', '${s.id}.html')
-
-		os.write_file(out_path, html) or {
-			eprintln('Failed to write ${s.id}: ${err}')
-			continue
-		}
-	}
-
-	// Generate a simple Index page for the 10 people
-	mut index_html := '<h1>Test Index</h1><ul>'
-	for s in test_batch {
-		index_html += '<li><a href="person/${s.id}.html">${s.name_native}</a></li>'
-	}
-	index_html += '</ul>'
-	os.write_file('dist/index.html', index_html) or { panic(err) }
-
-	println('Test build complete. Open ./dist/index.html to view.')
+		// 6. Save the flat file directly into your flat HTML folder
+		target_path := os.join_path(dir_html, 'person', '${slug_url}.html')
+		os.write_file(target_path, html_output) or { return }
+	})
 }
 

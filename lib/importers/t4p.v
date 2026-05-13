@@ -9,11 +9,12 @@ import utils
 import person
 
 // Using the v3 minified URL as requested
+const dir_import := os.getenv('TOMBSTONE_IMPORT')
 const t4p_csv_url = 'https://data.techforpalestine.org/api/v3/killed-in-gaza.csv'
-const cache_file = 'last_download-killed-in-gaza.txt'
+const cache_file = os.join_path(dir_import, 'last_download-killed-in-gaza.txt') 
 
 pub fn fetch_and_import() ![]person.Person {
-	local_csv := 'killed-in-gaza.min.csv'
+	local_csv := os.join_path(dir_import, 'killed-in-gaza.min.csv')  
 	mut data := ''
 	if os.exists(local_csv) {
 		data = os.read_file(local_csv)!
