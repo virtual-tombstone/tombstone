@@ -2,19 +2,18 @@ module importers
 
 import os
 import net.http
-import json
 import time
 import encoding.csv
 import utils
 import person
 
 // Using the v3 minified URL as requested
-const dir_import := os.getenv('TOMBSTONE_IMPORT')
+const dir_import = os.getenv('TOMBSTONE_IMPORT')
 const t4p_csv_url = 'https://data.techforpalestine.org/api/v3/killed-in-gaza.csv'
-const cache_file = os.join_path(dir_import, 'last_download-killed-in-gaza.txt') 
+const cache_file = os.join_path(dir_import, 'last_download-killed-in-gaza.txt')
 
 pub fn fetch_and_import() ![]person.Person {
-	local_csv := os.join_path(dir_import, 'killed-in-gaza.min.csv')  
+	local_csv := os.join_path(dir_import, 'killed-in-gaza.min.csv')
 	mut data := ''
 	if os.exists(local_csv) {
 		data = os.read_file(local_csv)!
@@ -75,12 +74,12 @@ pub fn fetch_and_import() ![]person.Person {
 		row := reader.read() or { break } // Stops at end of file
 
 		// Mapping indexes: 0:id, 1:en_name, 2:ar_name, 3:age, 4:dob, 5:sex
-		state_id:= row[0]
+		state_id := row[0]
 		en_name := row[1]
 		ar_name := row[2]
-		age_int := row[3].int()
-		dob_str := row[4]
 		sex_str := row[5]
+
+		birth_date_obj, death_date_obj := parse_life_span(row[4], row[3])
 
 		gender := match sex_str.trim_space() {
 			'm' { person.Gender.male }
@@ -103,7 +102,10 @@ pub fn fetch_and_import() ![]person.Person {
 				}
 			}
 			birth:        person.Event{
-				date: parse_birth_info(dob_str, age_int)
+				date: birth_date_obj
+			}
+			death:        person.Event{
+				date: death_date_obj
 			}
 			sources:      [
 				person.Source{
@@ -124,110 +126,60 @@ pub fn fetch_and_import() ![]person.Person {
 	return persons
 }
 
-pub fn import_t4p(data string) ![]person.Person {
-	// Decode as a raw 2D array: [][]string (or use any if types vary)
-	// Since numbers are quoted as numbers in JSON, we'll use [][]any
-	raw_data := json.decode([][]any, data)!
-
-	mut persons := []person.Person{}
-	now := time.now()
-
-	// Skip index 0 because it is the header ["id", "en_name", ...]
-	for i in 1 .. raw_data.len {
-		row := raw_data[i]
-
-		// Map indexes based on the header:
-		// 0:id, 1:en_name, 2:ar_name, 3:age, 4:dob, 5:sex
-		// id_from_source := row[0].str()
-		en_name := row[1].str()
-		println('en_name: ${en_name}')
-		ar_name := row[2].str()
-
-		age_str := row[3].str()
-		println('age string: ${age_str}')
-		// age := age_str.int()
-		age := 5
-
-		dob := row[4].str()
-		sex := row[5].str()
-
-		gender := match sex.trim_space() {
-			'm' { person.Gender.male }
-			'f' { person.Gender.female }
-			else { person.Gender.unknown }
-		}
-
-		mut p := person.Person{
-			id:       get_unique_id(row[0])
-			gender:   gender
-			name:     person.Name{
-				native: ar_name
-				first:  en_name.all_before(' ')
-				last:   en_name.all_after(' ')
-				translations: {
-					'en': en_name
-				}
-			}
-			birth:    person.Event{
-				date: parse_birth_info(dob, age)
-			}
-			sources:  [
-				person.Source{
-					label: 'TechForPalestine Dataset (v3)'
-					url:   'https://techforpalestine.org'
-				},
-			]
-			created:  now
-			modified: now
-		}
-
-		persons << p
-	}
-	return persons
-}
-
 fn get_unique_id(t4p_id string) string {
 	// We know the source is T4P, so we prefix it to avoid collisions
 	// with other future sources (like Wikipedia)
 	return utils.create_id_from_seed('t4p-${t4p_id}')
 }
 
-pub fn parse_birth_info(dob_str string, age int) person.Date {
-	// 1. Try to parse the DOB string (Expected format: YYYY-MM-DD)
-	if dob_str != '' {
+// parse_life_span calculates the birth and death dates based on the available T4P columns.
+// Since the conflict is ongoing across multiple calendar years, if we have an exact DOB 
+// and an Age at death, we can determine the precise year they passed away.
+fn parse_life_span(dob_str string, age_str string) (person.Date, person.Date) {
+	mut birth := person.Date{year: 0, month: 0, day: 0}
+	mut death := person.Date{year: 0, month: 0, day: 0}
+
+	age := if age_str != '' { age_str.int() } else { -1 }
+
+	// Scenario 1: Exact DOB is provided (YYYY-MM-DD)
+	if dob_str != '' && dob_str.contains('-') {
 		parts := dob_str.split('-')
 		if parts.len == 3 {
-			return person.Date{
+			birth = person.Date{
 				year:  u16(parts[0].u32())
 				month: u8(parts[1].u32())
 				day:   u8(parts[2].u32())
 			}
-		}
-		// If it's just a year string "YYYY"
-		if parts.len == 1 && dob_str.len == 4 {
-			return person.Date{
-				year:  u16(dob_str.u32())
-				month: 0
-				day:   0
+			
+			// If we have an exact DOB and an Age, Death Year = Birth Year + Age
+			// Month and Day MUST be 0 because they are unknown!
+			if age >= 0 {
+				death = person.Date{
+					year:  birth.year + u16(age)
+					month: 0 // Correct: Unknown exact month
+					day:   0 // Correct: Unknown exact day
+				}
 			}
+			return birth, death
 		}
 	}
 
-	// 2. Fallback to Age-based estimate
-	if age >= 0 {
-		ref_year := 2024
-		return person.Date{
-			year:  u16(ref_year - age)
+	// Scenario 2: DOB is missing, but we have an Age
+	if age >= 0 && dob_str == '' {
+		baseline_year := u16(2024)
+		birth = person.Date{
+			year:  baseline_year - u16(age)
 			month: 0
 			day:   0
 		}
+		death = person.Date{
+			year:  baseline_year
+			month: 0
+			day:   0
+		}
+		return birth, death
 	}
 
-	// 3. Absolute Fallback (Unknown)
-	return person.Date{
-		year:  0
-		month: 0
-		day:   0
-	}
+	return birth, death
 }
 
