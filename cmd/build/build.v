@@ -12,7 +12,7 @@ fn main() {
 	if dir_db.len == 0 || dir_html.len == 0 || dir_import.len == 0 {
 		eprintln('Error: TOMBSTONE_xx environment variables are not set.')
 		eprintln('Please run: source envvars')
-		exit(1) // Stop safely before paths explode
+		exit(1)
 	}
 
 	// Setup output directory structure
@@ -37,11 +37,16 @@ fn main() {
 		// Invoke your page generator passing the clean data context
 		build_person_page(mut p, dir_html)
 	})
+
+	build_home_index_page(dir_html, dir_db) or {
+		eprintln('Failed to generate index file: ${err}')
+		exit(1)
+	}
 }
 
 // 1. Move processing out of the closure to guarantee 100% stable template injections
 fn build_person_page(mut p person.Person, dir_html string) {
-	slug_url := p.slugify()
+	slug_url := person.slugify(p)
 
 	// Explicitly assign all local variable tokens for the template scope
 	locale := p.locale
@@ -71,9 +76,47 @@ fn build_person_page(mut p person.Person, dir_html string) {
 	}
 
 	// This now compiles safely because it sits inside a clean, first-class function scope!
-	html_output := $tmpl('templates/person.html')
+	// html_output := $tmpl('@VMODROOT/templates/person.html')
+	html_output := $tmpl('../../templates/person.html')
 
 	target_path := os.join_path(dir_html, 'person', '${slug_url}.html')
 	os.write_file(target_path, html_output) or { return }
+}
+
+fn build_home_index_page(dir_html string, dir_db string) ! {
+	// 1. Target the location of your compact summary dataset
+	summary_path := os.join_path(dir_db, 'summary.json')
+	if !os.exists(summary_path) {
+		return error('Missing critical database map: ${summary_path}')
+	}
+
+	// 2. Read and decode the global summary data stream array
+	json_data := os.read_file(summary_path)!
+	summaries := json.decode([]person.Summary, json_data)!
+	// 3. Prepare the dynamic injection parameters for the template scope
+	total_records := summaries.len
+
+	mut index_items_html := ''
+	for s in summaries {
+		slug := person.slugify(&s)
+		display_name := s.translations['en'] or { s.name_native }
+
+		// Build clean, semantic layout list items for the main index profile navigation
+		index_items_html += '
+		<li class="index-item">
+			<a href="person/${slug}.html" class="index-link">
+				<span class="ar-name" dir="rtl">${s.name_native}</span>
+				<span class="en-sub">${display_name}</span>
+			</a>
+		</li>'
+	}
+
+	// 4. Compile your new home template cleanly from the fixed root configuration folder
+	html_output := $tmpl('../../templates/index.html')
+
+	// 5. Save the compiled page directly into the root distribution html directory folder
+	target_path := os.join_path(dir_html, 'index.html')
+	os.write_file(target_path, html_output)!
+	println('Successfully generated global search page index showing ${total_records} profiles.')
 }
 

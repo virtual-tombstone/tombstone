@@ -1,7 +1,7 @@
 Module {
 	name: 'tombstone'
-	description: 'Digital graveyard'
-	version: '0.0.0'
-	license: ' '
+	description: 'Virtual Graveyard'
+	version: '0.2.0'
+	license: ''
 	dependencies: []
 }

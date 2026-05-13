@@ -86,28 +86,86 @@ body {
 }
 
 
-        body { 
-            font-family: "Segoe UI", Tahoma, sans-serif; 
-            padding: 3rem; 
-            line-height: 1.6; 
-            max-width: 600px; 
-            margin: auto; 
-            text-align: center; 
-            background-color: #fcfcfc;
-        }
-        .arabic { 
-            font-family: "Amiri", serif; /* Use the downloaded font */
-            font-size: 3rem; 
-            margin-bottom: 0.5rem; 
-            direction: rtl; 
-            color: #1a1a1a;
-        }
-        .english { 
-            font-size: 1.2rem; 
-            color: #666; 
-            margin-top: 0; 
-            letter-spacing: 0.5px;
-        }
-        .meta { margin-top: 2rem; color: #888; font-size: 0.9rem; }
+body { 
+    font-family: "Segoe UI", Tahoma, sans-serif; 
+    padding: 3rem; 
+    line-height: 1.6; 
+    max-width: 600px; 
+    margin: auto; 
+    text-align: center; 
+    background-color: #fcfcfc;
+}
+.arabic { 
+    font-family: "Amiri", serif; /* Use the downloaded font */
+    font-size: 3rem; 
+    margin-bottom: 0.5rem; 
+    direction: rtl; 
+    color: #1a1a1a;
+}
+.english { 
+    font-size: 1.2rem; 
+    color: #666; 
+    margin-top: 0; 
+    letter-spacing: 0.5px;
+}
+.meta { margin-top: 2rem; color: #888; font-size: 0.9rem; }
 
+/* Homepage Layout Styling */
+.index-container {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+    font-family: sans-serif;
+}
+.index-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+#search-bar {
+    width: 100%;
+    max-width: 500px;
+    padding: 0.75rem 1.25rem;
+    font-size: 1.1rem;
+    border: 2px solid #e5e5e5;
+    border-radius: 8px;
+    margin-top: 1rem;
+    outline: none;
+}
+#search-bar:focus {
+    border-color: #222;
+}
+.index-grid {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+}
+.index-item {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.index-item:hover {
+    transform: translateY(-2px);
+    border-color: #222;
+}
+.index-link {
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem;
+    text-decoration: none;
+    color: #1a1a1a;
+}
+.ar-name {
+    font-family: 'Amiri', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+.en-sub {
+    font-size: 0.95rem;
+    color: #666;
+}
 

@@ -135,26 +135,57 @@ struct Family {
 	name_preview string // A string to show if the related page doesn't exist yet
 }
 
+
+pub interface IsSlugable {
+	get_id() string
+	get_name_native() string
+	get_translations() map[string]string
+}
+
+pub fn (p Person) get_id() string {
+	return p.id
+}
+
+pub fn (p Person) get_name_native() string {
+	return p.name.native
+}
+
+pub fn (p Person) get_translations() map[string]string {
+	return p.name.translations or { map[string]string{} }
+}
+
+pub fn (s Summary) get_id() string {
+	return s.id
+}
+
+pub fn (s Summary) get_name_native() string {
+	return s.name_native
+}
+
+pub fn (s Summary) get_translations() map[string]string {
+	return s.translations
+}
+
 // slugify turns "Jamal Abu Hasan" into "jamal-abu-hasan-id" (determanistic slug)
-pub fn (mut p Person) slugify() string {
-	middle := if m := p.name.middle { '${m}-' } else { '' }
-	name := '${p.name.first}-${middle}${p.name.last}'
-	mut res := name.to_lower()
-	res = res.replace(' ', '-')
-	// Filter to keep only alphanumeric and dashes
+pub fn slugify(item IsSlugable) string {
+	id := item.get_id()
+	translations := item.get_translations()
+	
+	en_name := translations['en'] or { item.get_name_native() }
+	mut res := en_name.to_lower().replace(' ', '-')
+	
+	// Keep only alphanumeric and dashes
 	mut clean := []u8{}
 	for b in res {
 		if (b >= `a` && b <= `z`) || (b >= `0` && b <= `9`) || b == `-` {
 			clean << b
 		}
 	}
-	// Remove double dashes and leading/trailing dashes
+	
 	tmp := clean.bytestr().split('-').filter(it != '').join('-')
-	return if tmp.len > 0 { '${tmp}-${p.id}' } else { p.id }
+	return if tmp.len > 0 { '${tmp}-${id}' } else { id }
 }
 
-// TODO: check for dupplicate
-// TODO: skip looking for .json file while folder walk if folder depth is less then 2
 pub fn create_id() string {
 	return utils.rand_string(10, 10, utils.charset_read_safe)
 }

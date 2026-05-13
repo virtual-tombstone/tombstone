@@ -64,13 +64,16 @@ pub fn (mut d DiskStore) save(p person.Person) ! {
 	os.write_file(full_path, json.encode(p)) or { return error('Failed to write file') }
 
 	d.summary_map[p.id] = person.Summary{
-		id: p.id
-		// Unwrap the option or provide a fallback
-		// display: p.name.display or { p.name.first + ' ' + p.name.last }
+		id:          p.id
+		locale:      p.locale
 		name_native: p.name.native
-		birth:       person.format_event_date(p.birth)
-		death:       person.format_event_date(p.death)
-		tags:        p.tags
+		// FIX: Explicitly ensure the translations dictionary is assigned
+		translations: p.name.translations or {
+			map[string]string{}
+		}
+		birth:        person.format_event_date(p.birth)
+		death:        person.format_event_date(p.death)
+		tags:         p.tags
 	}
 
 	if plot := p.plot {
