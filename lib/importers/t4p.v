@@ -117,8 +117,7 @@ pub fn fetch_and_import() ![]person.Person {
 			created:      now
 			modified:     now
 		}
-		fingerprint := p.generate_fingerprint()
-		p.id = utils.create_id_from_seed(fingerprint)
+		p.id = utils.create_id_from_seed(p.generate_fingerprint())
 		persons << p
 	}
 

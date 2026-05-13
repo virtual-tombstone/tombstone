@@ -30,12 +30,13 @@ body {
 
 /* 3. Handling Dual-Script Scaling */
 .native-name {
-    font-family: 'Amiri', 'Georgia', serif;
-    font-size: clamp(2.5rem, 8vw, 4rem); /* Fluid scaling across mobile/desktop */
+    font-family: 'Amiri', Georgia, Cambria, "Times New Roman", Times, serif;
+    font-size: clamp(2.5rem, 8vw, 4rem);
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1.3;
     margin: 0 0 0.75rem 0;
 }
+
 
 /* Ensure right-to-left scripts automatically adjust spacing and alignment */
 .native-name[dir="rtl"] {
