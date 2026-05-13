@@ -1,0 +1,28 @@
+        body { 
+            font-family: "Segoe UI", Tahoma, sans-serif; 
+            padding: 3rem; 
+            line-height: 1.6; 
+            max-width: 600px; 
+            margin: auto; 
+            text-align: center; 
+            background-color: #fcfcfc;
+        }
+        .arabic { 
+            font-family: "Amiri", serif; /* Use the downloaded font */
+            font-size: 3rem; 
+            margin-bottom: 0.5rem; 
+            direction: rtl; 
+            color: #1a1a1a;
+        }
+        .english { 
+            font-size: 1.2rem; 
+            color: #666; 
+            margin-top: 0; 
+            letter-spacing: 0.5px;
+        }
+        .meta { margin-top: 2rem; color: #888; font-size: 0.9rem; }
+
+.native-name { font-size: 3rem; direction: rtl; font-family: "Amiri", serif; }
+.name-translation { color: #666; font-style: italic; }
+
+
