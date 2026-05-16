@@ -42,4 +42,3 @@ pub fn load_site_data(data_path string) !SiteData {
 
 	return data
 }
-

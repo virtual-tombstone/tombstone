@@ -4,17 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- Standard Meta Tags -->
     <title>${native_name}</title>
     <meta name="description" content="${meta_desc}">
     <meta name="keywords" content="${keywords_txt}">
 
     <!-- External Assets -->
-    <link rel="stylesheet" href="../css/style.css">
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="${font_url}" rel="stylesheet">
 
+    <link rel="stylesheet" href="../css/style.css">
     <script src="../js/lang-switcher.js" defer></script>
 </head>
 <body>
@@ -29,13 +28,9 @@
     <main class="memorial-container">
         <article class="memorial-card">
             <header class="memorial-header">
-                <!-- Original name in its own script -->
-                <h1 class="native-name" dir="${direction}">${native_name}</h1>
-                
-                <!-- Translation placeholder filled by JS -->
+                <h1 class="${name_classes}" dir="${direction}">${native_name}</h1>
                 <h2 id="name-translation" class="translation-subtitle" data-auto-dir data-translations='${translation_json}'></h2>
             </header>
-
             <section class="memorial-content">
                 <div class="life-dates">
                     <p>
@@ -55,8 +50,8 @@
 
             <footer class="memorial-footer">
                 <hr>
-                <a href="../index.html" data-translations='{"en": "← Back to Index", "ar": "← العودة إلى الفهرس"}'>← Back to Index</a>
                 <p class="id-badge">ID: ${person_id}</p>
+                <a href="../index.html" data-translations='{"en": "← Back to Index", "ar": "← العودة إلى الفهرس"}'>← Back to Index</a>
             </footer>
         </article>
     </main>

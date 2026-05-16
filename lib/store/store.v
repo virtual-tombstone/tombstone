@@ -149,4 +149,3 @@ fn (d DiskStore) load_summary() []person.Summary {
 	raw := os.read_file(d.index_path) or { return []person.Summary{} }
 	return json.decode([]person.Summary, raw) or { []person.Summary{} }
 }
-

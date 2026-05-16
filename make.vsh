@@ -1,6 +1,5 @@
 #!/bin/v run
 
-// nix
 import build
 import make
 

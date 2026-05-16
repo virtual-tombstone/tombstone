@@ -4,6 +4,8 @@ import os
 import json
 import lib.person
 
+const font_url = 'https://fonts.googleapis.com/css2?family=Amiri:ital,wght\@0,400;0,700;1,400;1,700&display=swap'
+
 fn main() {
 	dir_db := os.getenv('TOMBSTONE_DB')
 	dir_html := os.getenv('TOMBSTONE_HTML')
@@ -52,6 +54,10 @@ fn build_person_page(mut p person.Person, dir_html string) {
 	locale := p.locale
 	native_name := p.name.native
 	direction := if p.locale == 'ar' || p.locale == 'he' { 'rtl' } else { 'ltr' }
+
+	// Build the class injection string dynamically based on locale flags
+	name_classes := if p.locale == 'ar' { 'native-name arabic' } else { 'native-name' }
+
 	person_id := p.id
 
 	// Unwrapping birth/death variables safely
@@ -105,7 +111,7 @@ fn build_home_index_page(dir_html string, dir_db string) ! {
 		index_items_html += '
 		<li class="index-item">
 			<a href="person/${slug}.html" class="index-link">
-				<span class="ar-name" dir="rtl">${s.name_native}</span>
+				<span class="ar-name arabic" dir="rtl">${s.name_native}</span>
 				<span class="en-sub">${display_name}</span>
 			</a>
 		</li>'
@@ -119,4 +125,3 @@ fn build_home_index_page(dir_html string, dir_db string) ! {
 	os.write_file(target_path, html_output)!
 	println('Successfully generated global search page index showing ${total_records} profiles.')
 }
-

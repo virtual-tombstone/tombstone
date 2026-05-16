@@ -95,13 +95,25 @@ body {
     text-align: center; 
     background-color: #fcfcfc;
 }
+
 .arabic { 
-    font-family: "Amiri", serif; /* Use the downloaded font */
-    font-size: 3rem; 
-    margin-bottom: 0.5rem; 
+    font-family: "Amiri", serif;
+    font-style: normal;
+    font-size: 3em; 
+    margin-bottom: 0.5em; 
     direction: rtl; 
     color: #1a1a1a;
 }
+.native-name.arabic { 
+    font-family: "Amiri", "Traditional Arabic", "Sakkal Majalla", serif;
+    font-style: normal;
+    font-size: clamp(2.5rem, 7vw, 3.5rem);
+    margin-bottom: 0.5rem; 
+    direction: rtl; 
+    color: #1a1a1a;
+    line-height: 1.3;
+}
+
 .english { 
     font-size: 1.2rem; 
     color: #666; 

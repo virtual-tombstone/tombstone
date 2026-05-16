@@ -21,7 +21,7 @@ pub:
 	modified     time.Time
 	extra        ?map[string]string
 pub mut:
-	id           string
+	id string
 }
 
 // To build index pages
@@ -135,7 +135,6 @@ struct Family {
 	name_preview string // A string to show if the related page doesn't exist yet
 }
 
-
 pub interface IsSlugable {
 	get_id() string
 	get_name_native() string
@@ -151,7 +150,9 @@ pub fn (p Person) get_name_native() string {
 }
 
 pub fn (p Person) get_translations() map[string]string {
-	return p.name.translations or { map[string]string{} }
+	return p.name.translations or {
+		map[string]string{}
+	}
 }
 
 pub fn (s Summary) get_id() string {
@@ -170,10 +171,10 @@ pub fn (s Summary) get_translations() map[string]string {
 pub fn slugify(item IsSlugable) string {
 	id := item.get_id()
 	translations := item.get_translations()
-	
+
 	en_name := translations['en'] or { item.get_name_native() }
 	mut res := en_name.to_lower().replace(' ', '-')
-	
+
 	// Keep only alphanumeric and dashes
 	mut clean := []u8{}
 	for b in res {
@@ -181,7 +182,7 @@ pub fn slugify(item IsSlugable) string {
 			clean << b
 		}
 	}
-	
+
 	tmp := clean.bytestr().split('-').filter(it != '').join('-')
 	return if tmp.len > 0 { '${tmp}-${id}' } else { id }
 }
@@ -191,9 +192,8 @@ pub fn create_id() string {
 }
 
 pub fn (p Person) generate_fingerprint() string {
-
 	norm_name := p.name.native.to_lower().replace(' ', '')
-	
+
 	mut year := '0'
 	mut month := '0'
 	mut day := '0'
@@ -208,4 +208,3 @@ pub fn (p Person) generate_fingerprint() string {
 	}
 	return '${norm_name}-${year}-${month}-${day}'
 }
-

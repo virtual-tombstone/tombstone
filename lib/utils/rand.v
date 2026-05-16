@@ -8,7 +8,7 @@ module utils
 import strings
 import rand
 import rand.seed
-import rand.wyrand 
+import rand.wyrand
 
 pub const charset_standard = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 pub const charset_read_safe = 'ABCDEFHJLMNQRTUVWXYZabcefghijkmnopqrtuvwxyz23479'
@@ -32,12 +32,12 @@ pub fn rand_string(min int, max int, charset string) string {
 // Deterministic ID generator (The duplication-killer)
 pub fn create_id_from_seed(seed_text string) string {
 	// 1. Create a numeric seed from the string hash
-	hash_val := u32(seed_text.hash()) 
+	hash_val := u32(seed_text.hash())
 
 	// 2. Initialize the generator and cast it to the PRNG interface
 	// This "unlocks" the high-level methods like intn/u32n
 	mut rng := rand.PRNG(&wyrand.WyRandRNG{})
-	rng.seed([hash_val, hash_val]) 
+	rng.seed([hash_val, hash_val])
 
 	// 3. Build the 10-char string
 	mut result := []u8{len: 10}
@@ -49,7 +49,6 @@ pub fn create_id_from_seed(seed_text string) string {
 	return result.bytestr()
 }
 
-
 fn get_json_safe_ascii() string {
 	mut sb := strings.new_builder(95)
 	for i in 33 .. 127 {
@@ -60,4 +59,3 @@ fn get_json_safe_ascii() string {
 	}
 	return sb.str()
 }
-

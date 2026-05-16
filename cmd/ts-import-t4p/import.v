@@ -23,21 +23,28 @@ fn main() {
 	mut ds := store.new_disk_store(dir_db, os.join_path_single(dir_db, 'summary.json'),
 		os.join_path_single(dir_db, 'cemeteries'))
 
-    // Read the dev limit from environment, fallback to 10 if empty or 0
-    env_limit := os.getenv('TOMBSTONE_DEV_LIMIT').int()
-    limit := if env_limit > 0 { env_limit } else { 10 }
+	// Read the dev limit from environment, fallback to 10 if empty or 0
+	env_limit := os.getenv('TOMBSTONE_DEV_LIMIT').int()
+	limit := if env_limit > 0 { env_limit } else { all_persons.len }
 
-   println('Saving test batch of ${limit} records...')
-    for i in 0 .. limit {
-        // Safe check in case the dataset has fewer rows than the limit
-        if i >= all_persons.len { break } 
-        
-        mut p := all_persons[i]
-        ds.save(p) or { continue }
-    }
+	println('Saving test batch of ${limit} records...')
+	for i in 0 .. limit {
+		// Safe check in case the dataset has fewer rows than the limit
+		if i >= all_persons.len {
+			break
+		}
+
+		mut p := all_persons[i]
+		ds.save(p) or { continue }
+	}
 
 	// Finalize the index files
 	ds.flush_all() or { panic(err) }
 	println('Import complete. Data saved to ${dir_db} ')
-}
 
+	// Trigger the search shard compiler pass right before finishing
+	importers.generate_search_shards(dir_db, dir_html) or {
+		eprintln('Failed to generate search indexes: ${err}')
+		exit(1)
+	}
+}
